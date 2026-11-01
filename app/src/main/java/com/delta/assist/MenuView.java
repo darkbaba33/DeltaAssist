@@ -2,11 +2,11 @@ package com.delta.assist;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -40,7 +40,7 @@ public class MenuView extends LinearLayout {
         // 1. KÜÇÜK LOGO (Varsayılan Simge)
         logoBtn = new ImageView(context);
         logoBtn.setImageResource(android.R.drawable.sym_def_app_icon); 
-        logoBtn.setColorFilter(Config.themeColor);
+        logoBtn.setColorFilter(Config.themeColor, PorterDuff.Mode.SRC_IN);
         logoBtn.setScaleType(ImageView.ScaleType.FIT_CENTER);
         
         LinearLayout.LayoutParams logoParams = new LinearLayout.LayoutParams(130, 130);
@@ -94,7 +94,11 @@ public class MenuView extends LinearLayout {
         menuContent.addView(tabsLayout);
 
         FrameLayout contentArea = new FrameLayout(context);
-        contentArea.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        LinearLayout.LayoutParams frameParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        contentArea.setLayoutParams(frameParams);
         
         tabVisuals = createVisualsContent(context);
         tabAim = createAimContent(context);
@@ -137,8 +141,11 @@ public class MenuView extends LinearLayout {
         
         titleText.setTextColor(Config.themeColor);
         menuBg.setStroke(4, Config.themeColor);
-        ((GradientDrawable) logoBtn.getBackground()).setStroke(4, Config.themeColor);
-        logoBtn.setColorFilter(Config.themeColor);
+        GradientDrawable bg = (GradientDrawable) logoBtn.getBackground();
+        if (bg != null) {
+            bg.setStroke(4, Config.themeColor);
+        }
+        logoBtn.setColorFilter(Config.themeColor, PorterDuff.Mode.SRC_IN);
     }
 
     private TextView createTabButton(String text) {
@@ -202,7 +209,9 @@ public class MenuView extends LinearLayout {
         tv.setText(text);
         tv.setTextColor(Color.WHITE);
         tv.setTextSize(15f);
-        tv.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        
+        LinearLayout.LayoutParams tvParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        tv.setLayoutParams(tvParams);
         row.addView(tv);
 
         Switch sw = new Switch(getContext());
