@@ -2,19 +2,15 @@ package com.delta.assist;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.graphics.PorterDuff;
 import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.Switch;
 
 public class MenuView extends LinearLayout {
     private final WindowManager wm;
@@ -23,8 +19,8 @@ public class MenuView extends LinearLayout {
 
     private LinearLayout menuContent;
     private ImageView logoBtn;
-    private LinearLayout tabVisuals, tabAim;
     private TextView btnVisuals, btnAim, titleText;
+    private LinearLayout tabVisuals, tabAim;
     private GradientDrawable menuBg;
     
     private final int COLOR_BG = Color.parseColor("#E6100A1C");
@@ -37,13 +33,9 @@ public class MenuView extends LinearLayout {
         this.params = params;
         setOrientation(VERTICAL);
         
-        // 1. KÜÇÜK LOGO (Varsayılan Simge)
         logoBtn = new ImageView(context);
         logoBtn.setImageResource(android.R.drawable.sym_def_app_icon); 
-        logoBtn.setColorFilter(Config.themeColor, PorterDuff.Mode.SRC_IN);
-        logoBtn.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        
-        LinearLayout.LayoutParams logoParams = new LinearLayout.LayoutParams(130, 130);
+        LinearLayout.LayoutParams logoParams = new LinearLayout.LayoutParams(120, 120);
         logoParams.setMargins(10, 10, 10, 10);
         logoBtn.setLayoutParams(logoParams);
         
@@ -55,10 +47,9 @@ public class MenuView extends LinearLayout {
         
         addView(logoBtn);
 
-        // 2. ANA MENÜ İÇERİĞİ (Başlangıçta gizli)
         menuContent = new LinearLayout(context);
         menuContent.setOrientation(VERTICAL);
-        menuContent.setPadding(30, 30, 30, 30);
+        menuContent.setPadding(40, 40, 40, 40);
         menuContent.setVisibility(GONE);
 
         menuBg = new GradientDrawable();
@@ -70,52 +61,64 @@ public class MenuView extends LinearLayout {
         titleText = new TextView(context);
         titleText.setText("Buse cheat delta force");
         titleText.setTextColor(Config.themeColor);
-        titleText.setTextSize(16f);
+        titleText.setTextSize(18f);
         titleText.setGravity(Gravity.CENTER);
-        titleText.setPadding(0, 0, 0, 20);
+        titleText.setPadding(0, 0, 0, 30);
         menuContent.addView(titleText);
 
         Button colorBtn = new Button(context);
-        colorBtn.setText("🎨 Tema Rengini Değiştir");
+        colorBtn.setText("Tema Rengini Degistir");
         colorBtn.setTextSize(12f);
-        colorBtn.setOnClickListener(v -> changeTheme());
+        colorBtn.setOnClickListener(new OnClickListener() {
+            @Override public void onClick(View v) { changeTheme(); }
+        });
         menuContent.addView(colorBtn);
 
         LinearLayout tabsLayout = new LinearLayout(context);
         tabsLayout.setOrientation(HORIZONTAL);
         tabsLayout.setGravity(Gravity.CENTER);
-        tabsLayout.setPadding(0, 20, 0, 20);
+        tabsLayout.setPadding(0, 30, 0, 30);
 
-        btnVisuals = createTabButton("Görseller");
-        btnAim = createTabButton("Nişan");
+        btnVisuals = createTabButton("Gorseller");
+        btnAim = createTabButton("Nisan");
         
         tabsLayout.addView(btnVisuals);
         tabsLayout.addView(btnAim);
         menuContent.addView(tabsLayout);
 
-        FrameLayout contentArea = new FrameLayout(context);
-        LinearLayout.LayoutParams frameParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        contentArea.setLayoutParams(frameParams);
-        
-        tabVisuals = createVisualsContent(context);
-        tabAim = createAimContent(context);
-        contentArea.addView(tabVisuals);
-        contentArea.addView(tabAim);
-        
+        tabVisuals = new LinearLayout(context);
+        tabVisuals.setOrientation(VERTICAL);
+        tabVisuals.addView(createToggleRow("Kutu (ESP)", Config.showBox, new OnToggle() {
+            @Override public void toggle(boolean b) { Config.showBox = b; }
+        }));
+        tabVisuals.addView(createToggleRow("Hedef Cizgisi", Config.showLine, new OnToggle() {
+            @Override public void toggle(boolean b) { Config.showLine = b; }
+        }));
+        tabVisuals.addView(createToggleRow("Isim Etiketi", Config.showName, new OnToggle() {
+            @Override public void toggle(boolean b) { Config.showName = b; }
+        }));
+        tabVisuals.addView(createToggleRow("Gorsel Iskelet", Config.showSkeleton, new OnToggle() {
+            @Override public void toggle(boolean b) { Config.showSkeleton = b; }
+        }));
+
+        tabAim = new LinearLayout(context);
+        tabAim.setOrientation(VERTICAL);
+        tabAim.addView(createToggleRow("Aim Assist", Config.aimEnabled, new OnToggle() {
+            @Override public void toggle(boolean b) { Config.aimEnabled = b; }
+        }));
+
+        menuContent.addView(tabVisuals);
+        menuContent.addView(tabAim);
         btnVisuals.performClick();
-        menuContent.addView(contentArea);
 
         addView(menuContent);
 
-        // Logoya Tıklayınca Menüyü Aç/Kapat
-        logoBtn.setOnClickListener(v -> {
-            menuContent.setVisibility(menuContent.getVisibility() == VISIBLE ? GONE : VISIBLE);
+        logoBtn.setOnClickListener(new OnClickListener() {
+            @Override public void onClick(View v) {
+                menuContent.setVisibility(menuContent.getVisibility() == VISIBLE ? GONE : VISIBLE);
+            }
         });
 
-        // Sürükleme Mantığı (Logodan tutunca)
         logoBtn.setOnTouchListener(new OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -138,14 +141,10 @@ public class MenuView extends LinearLayout {
     private void changeTheme() {
         currentColorIndex = (currentColorIndex + 1) % THEMES.length;
         Config.themeColor = THEMES[currentColorIndex];
-        
         titleText.setTextColor(Config.themeColor);
         menuBg.setStroke(4, Config.themeColor);
         GradientDrawable bg = (GradientDrawable) logoBtn.getBackground();
-        if (bg != null) {
-            bg.setStroke(4, Config.themeColor);
-        }
-        logoBtn.setColorFilter(Config.themeColor, PorterDuff.Mode.SRC_IN);
+        if (bg != null) bg.setStroke(4, Config.themeColor);
     }
 
     private TextView createTabButton(String text) {
@@ -154,71 +153,48 @@ public class MenuView extends LinearLayout {
         btn.setTextSize(16f);
         btn.setPadding(40, 15, 40, 15);
         btn.setTextColor(Color.GRAY);
-        btn.setOnClickListener(v -> {
-            boolean isVisuals = text.equals("Görseller");
-            btnVisuals.setTextColor(isVisuals ? Config.themeColor : Color.GRAY);
-            btnAim.setTextColor(isVisuals ? Color.GRAY : Config.themeColor);
-            tabVisuals.setVisibility(isVisuals ? VISIBLE : GONE);
-            tabAim.setVisibility(isVisuals ? GONE : VISIBLE);
+        btn.setOnClickListener(new OnClickListener() {
+            @Override public void onClick(View v) {
+                boolean isVis = text.equals("Gorseller");
+                btnVisuals.setTextColor(isVis ? Config.themeColor : Color.GRAY);
+                btnAim.setTextColor(isVis ? Color.GRAY : Config.themeColor);
+                tabVisuals.setVisibility(isVis ? VISIBLE : GONE);
+                tabAim.setVisibility(isVis ? GONE : VISIBLE);
+            }
         });
         return btn;
     }
 
-    private LinearLayout createVisualsContent(Context context) {
-        LinearLayout layout = new LinearLayout(context);
-        layout.setOrientation(VERTICAL);
-        layout.addView(createSwitch("Kutu (ESP)", Config.showBox, (b) -> Config.showBox = b));
-        layout.addView(createSwitch("Hedef Çizgisi", Config.showLine, (b) -> Config.showLine = b));
-        layout.addView(createSwitch("İsim Etiketi", Config.showName, (b) -> Config.showName = b));
-        layout.addView(createSwitch("Görsel İskelet", Config.showSkeleton, (b) -> Config.showSkeleton = b));
-        return layout;
-    }
-
-    private LinearLayout createAimContent(Context context) {
-        LinearLayout layout = new LinearLayout(context);
-        layout.setOrientation(VERTICAL);
-        layout.addView(createSwitch("Aim Assist (Oto Nişan)", Config.aimEnabled, (b) -> Config.aimEnabled = b));
-
-        TextView fovText = new TextView(context);
-        fovText.setText("FOV Alanı");
-        fovText.setTextColor(Color.WHITE);
-        fovText.setPadding(0, 20, 0, 10);
-        layout.addView(fovText);
-
-        SeekBar fovBar = new SeekBar(context);
-        fovBar.setMax(100);
-        fovBar.setProgress((int)(Config.fovFraction * 100));
-        fovBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (progress > 10) Config.fovFraction = progress / 100f;
-            }
-            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
-            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
-        });
-        layout.addView(fovBar);
-        return layout;
-    }
-
-    private LinearLayout createSwitch(String text, boolean isChecked, final OnToggleListener listener) {
+    private LinearLayout createToggleRow(String text, boolean initial, final OnToggle listener) {
         LinearLayout row = new LinearLayout(getContext());
         row.setOrientation(HORIZONTAL);
-        row.setPadding(0, 15, 0, 15);
-        row.setGravity(Gravity.CENTER_VERTICAL);
-
+        row.setPadding(0, 20, 0, 20);
+        
         TextView tv = new TextView(getContext());
         tv.setText(text);
         tv.setTextColor(Color.WHITE);
-        tv.setTextSize(15f);
-        
-        LinearLayout.LayoutParams tvParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-        tv.setLayoutParams(tvParams);
+        tv.setTextSize(16f);
+        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f);
+        tv.setLayoutParams(p);
         row.addView(tv);
 
-        Switch sw = new Switch(getContext());
-        sw.setChecked(isChecked);
-        sw.setOnCheckedChangeListener((buttonView, checked) -> listener.onToggle(checked));
-        row.addView(sw);
+        final TextView stateTv = new TextView(getContext());
+        stateTv.setText(initial ? "[ ACIK ]" : "[ KAPALI ]");
+        stateTv.setTextColor(initial ? Color.GREEN : Color.RED);
+        stateTv.setTextSize(16f);
+        
+        final boolean[] state = {initial};
+        stateTv.setOnClickListener(new OnClickListener() {
+            @Override public void onClick(View v) {
+                state[0] = !state[0];
+                stateTv.setText(state[0] ? "[ ACIK ]" : "[ KAPALI ]");
+                stateTv.setTextColor(state[0] ? Color.GREEN : Color.RED);
+                listener.toggle(state[0]);
+            }
+        });
+        row.addView(stateTv);
         return row;
     }
-    private interface OnToggleListener { void onToggle(boolean isChecked); }
+    
+    private interface OnToggle { void toggle(boolean isChecked); }
 }
