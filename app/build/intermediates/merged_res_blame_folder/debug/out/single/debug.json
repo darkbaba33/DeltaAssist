@@ -1,0 +1,10 @@
+[
+    {
+        "merged": "com.delta.assist.app-merged_res-23:/layout_activity_main.xml.flat",
+        "source": "com.delta.assist.app-main-25:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.delta.assist.app-merged_res-23:/xml_accessibility_service_config.xml.flat",
+        "source": "com.delta.assist.app-main-25:/xml/accessibility_service_config.xml"
+    }
+]
