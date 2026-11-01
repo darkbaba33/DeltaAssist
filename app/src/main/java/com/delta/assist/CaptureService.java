@@ -19,6 +19,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.WindowManager;
 import java.nio.ByteBuffer;
@@ -88,6 +89,12 @@ public class CaptureService extends Service {
         display = projection.createVirtualDisplay("delta-cap", capW, capH, dpi, DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, reader.getSurface(), null, backgroundHandler);
 
         setupOverlay();
+        
+        // Test için hemen ekrana yeşil halkayı çiz
+        if (overlay != null) {
+            overlay.render(new ArrayList<>(), capW, capH, screenW, screenH);
+        }
+
         running = true;
         reader.setOnImageAvailableListener(this::onFrame, backgroundHandler);
         return START_STICKY;
@@ -100,7 +107,6 @@ public class CaptureService extends Service {
             WindowManager.LayoutParams lpEsp = new WindowManager.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN, PixelFormat.TRANSLUCENT);
             wm.addView(overlay, lpEsp);
 
-            // BURASI DÜZELTİLDİ: Menü genişliği 800 piksel yapıldı ki yazılar dikey olmasın
             WindowManager.LayoutParams lpMenu = new WindowManager.LayoutParams(800, WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, PixelFormat.TRANSLUCENT);
             lpMenu.gravity = Gravity.TOP | Gravity.START;
             lpMenu.x = 50; lpMenu.y = 200;
@@ -145,7 +151,9 @@ public class CaptureService extends Service {
                 if (Config.espEnabled) overlay.post(() -> overlay.render(inFov, capW, capH, screenW, screenH));
                 else overlay.post(() -> overlay.render(new ArrayList<>(), capW, capH, screenW, screenH));
             }
-        } catch (Exception ignored) { } finally { if (img != null) img.close(); }
+        } catch (Exception e) { 
+            Log.e("HILE_HATA", "Ekran okunamadi", e);
+        } finally { if (img != null) img.close(); }
     }
 
     private Notification buildNotification() {
