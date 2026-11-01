@@ -14,7 +14,7 @@ public class OverlayView extends View {
     private final Paint boxPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint linePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint skeletonPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint crosshairPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     
     private volatile int capW = 1, capH = 1;
     private volatile int screenW, screenH;
@@ -23,21 +23,19 @@ public class OverlayView extends View {
     public OverlayView(Context ctx, int sw, int sh) {
         super(ctx);
         this.screenW = sw; this.screenH = sh;
-        
         boxPaint.setStyle(Paint.Style.STROKE);
-        boxPaint.setStrokeWidth(8f); // KUTU ÇİZGİSİ KALINLAŞTIRILDI
-        
+        boxPaint.setStrokeWidth(6f); 
         linePaint.setStyle(Paint.Style.STROKE);
-        linePaint.setStrokeWidth(4f); // SNAPLINE KALINLAŞTIRILDI
+        linePaint.setStrokeWidth(3f); 
         linePaint.setColor(Color.RED);
-        
         textPaint.setColor(Color.WHITE);
-        textPaint.setTextSize(40f);
+        textPaint.setTextSize(35f);
         textPaint.setTypeface(Typeface.DEFAULT_BOLD);
         textPaint.setShadowLayer(5f, 3f, 3f, Color.BLACK);
 
-        skeletonPaint.setStyle(Paint.Style.STROKE);
-        skeletonPaint.setStrokeWidth(5f);
+        crosshairPaint.setStyle(Paint.Style.STROKE);
+        crosshairPaint.setStrokeWidth(5f);
+        crosshairPaint.setColor(Color.GREEN);
     }
 
     public void render(List<Detector.Blob> bList, int cw, int ch, int sw, int sh) {
@@ -50,38 +48,24 @@ public class OverlayView extends View {
     @Override
     protected void onDraw(Canvas c) {
         super.onDraw(c);
+        
+        // EKRANIN ORTASINA HER ZAMAN YEŞİL HALKAYI ÇİZ
+        c.drawCircle(screenW / 2f, screenH / 2f, 40f, crosshairPaint);
+
         if (targets == null || targets.isEmpty() || !Config.espEnabled) return;
         
         boxPaint.setColor(Config.themeColor);
-        skeletonPaint.setColor(Config.themeColor);
-
         final float sx = (float) screenW / capW;
         final float sy = (float) screenH / capH;
 
         for (Detector.Blob b : targets) {
             final float x = b.cx * sx;
             final float y = b.cy * sy;
-            
-            float boxWidth = 160f; // Kutu genişliği artırıldı
-            float boxHeight = 300f; // Kutu boyu artırıldı
-            
-            Rect rect = new Rect((int)(x - boxWidth/2), (int)(y - boxHeight*0.7f), (int)(x + boxWidth/2), (int)(y + boxHeight*0.3f));
+            Rect rect = new Rect((int)(x - 50), (int)(y - 100), (int)(x + 50), (int)(y + 100));
 
             if (Config.showBox) c.drawRect(rect, boxPaint);
             if (Config.showLine) c.drawLine(screenW / 2f, screenH, x, y, linePaint);
-            if (Config.showName) {
-                // Yazının arkasına siyah bir gölge/kutu ekleyerek okunabilirliği artırıyoruz
-                c.drawText("DÜŞMAN", x - 70f, rect.top - 20f, textPaint);
-            }
-
-            if (Config.showSkeleton) {
-                float headY = rect.top + 40;
-                c.drawCircle(x, headY, 20f, skeletonPaint);
-                c.drawLine(x, headY + 20, x, headY + 120, skeletonPaint);
-                c.drawLine(x - 40, headY + 60, x + 40, headY + 60, skeletonPaint);
-                c.drawLine(x, headY + 120, x - 35, headY + 200, skeletonPaint);
-                c.drawLine(x, headY + 120, x + 35, headY + 200, skeletonPaint);
-            }
+            if (Config.showName) c.drawText("HEDEF", x - 40f, rect.top - 15f, textPaint);
         }
     }
 }

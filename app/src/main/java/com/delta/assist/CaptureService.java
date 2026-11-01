@@ -86,11 +86,14 @@ public class CaptureService extends Service {
         capH = (int) ((long) capW * screenH / Math.max(1, screenW));
 
         reader = ImageReader.newInstance(capW, capH, PixelFormat.RGBA_8888, 2);
-        display = projection.createVirtualDisplay("delta-cap", capW, capH, dpi, DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, reader.getSurface(), null, backgroundHandler);
+        
+        // HYPEROS ZORLAMA BAYRAĞI EKLENDİ
+        int flags = DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR | DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC;
+        display = projection.createVirtualDisplay("delta-cap", capW, capH, dpi, flags, reader.getSurface(), null, backgroundHandler);
 
         setupOverlay();
         
-        // Test için hemen ekrana yeşil halkayı çiz
+        // Ekrana zorla test halkası çiz
         if (overlay != null) {
             overlay.render(new ArrayList<>(), capW, capH, screenW, screenH);
         }
@@ -152,7 +155,7 @@ public class CaptureService extends Service {
                 else overlay.post(() -> overlay.render(new ArrayList<>(), capW, capH, screenW, screenH));
             }
         } catch (Exception e) { 
-            Log.e("HILE_HATA", "Ekran okunamadi", e);
+            Log.e("HILE_HATA", "Ekran okuma hatasi", e);
         } finally { if (img != null) img.close(); }
     }
 
