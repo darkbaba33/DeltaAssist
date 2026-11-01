@@ -6,6 +6,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -93,7 +94,7 @@ public class MenuView extends LinearLayout {
         menuContent.addView(tabsLayout);
 
         FrameLayout contentArea = new FrameLayout(context);
-        contentArea.setLayoutParams(new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+        contentArea.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         
         tabVisuals = createVisualsContent(context);
         tabAim = createAimContent(context);
@@ -201,7 +202,7 @@ public class MenuView extends LinearLayout {
         tv.setText(text);
         tv.setTextColor(Color.WHITE);
         tv.setTextSize(15f);
-        tv.setLayoutParams(new LinearLayout.LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
+        tv.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         row.addView(tv);
 
         Switch sw = new Switch(getContext());
