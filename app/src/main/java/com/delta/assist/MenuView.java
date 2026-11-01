@@ -31,7 +31,7 @@ public class MenuView extends LinearLayout {
         setBackground(bg);
 
         TextView title = new TextView(context);
-        title.setText("ZoloAssist - NonRoot");
+        title.setText("Buse naz delta force");
         title.setTextColor(Color.CYAN);
         title.setTextSize(18f);
         title.setGravity(Gravity.CENTER);
