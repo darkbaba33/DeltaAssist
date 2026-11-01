@@ -13,6 +13,7 @@ public class OverlayView extends View {
     private final Paint boxPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint linePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    
     private volatile int capW = 1, capH = 1;
     private volatile int screenW, screenH;
     private volatile List<Detector.Blob> targets = new ArrayList<>();
@@ -20,12 +21,15 @@ public class OverlayView extends View {
     public OverlayView(Context ctx, int sw, int sh) {
         super(ctx);
         this.screenW = sw; this.screenH = sh;
+        
         boxPaint.setStyle(Paint.Style.STROKE);
         boxPaint.setStrokeWidth(5f);
         boxPaint.setColor(Color.CYAN);
+        
         linePaint.setStyle(Paint.Style.STROKE);
         linePaint.setStrokeWidth(2f);
         linePaint.setColor(Color.RED);
+        
         textPaint.setColor(Color.WHITE);
         textPaint.setTextSize(35f);
         textPaint.setShadowLayer(4f, 2f, 2f, Color.BLACK);
@@ -48,11 +52,21 @@ public class OverlayView extends View {
         for (Detector.Blob b : targets) {
             final float x = b.cx * sx;
             final float y = b.cy * sy;
+            
+            // Düşmanın boyuna göre dinamik kutu boyutu
             float boxWidth = 140f;
             float boxHeight = 220f;
-            Rect rect = new Rect((int)(x - boxWidth/2), (int)(y - boxHeight*0.7f), (int)(x + boxWidth/2), (int)(y + boxHeight*0.3f));
+
+            Rect rect = new Rect(
+                (int)(x - boxWidth/2), (int)(y - boxHeight*0.7f), 
+                (int)(x + boxWidth/2), (int)(y + boxHeight*0.3f)
+            );
+
+            // Kutu ve Snapline
             c.drawRect(rect, boxPaint);
             c.drawLine(screenW / 2f, screenH, x, y, linePaint);
+            
+            // Üstüne yazı
             c.drawText("HEDEF", x - 40f, rect.top - 15f, textPaint);
         }
     }
