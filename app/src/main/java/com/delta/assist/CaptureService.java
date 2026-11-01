@@ -100,9 +100,10 @@ public class CaptureService extends Service {
             WindowManager.LayoutParams lpEsp = new WindowManager.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN, PixelFormat.TRANSLUCENT);
             wm.addView(overlay, lpEsp);
 
-            WindowManager.LayoutParams lpMenu = new WindowManager.LayoutParams(WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, PixelFormat.TRANSLUCENT);
+            // BURASI DÜZELTİLDİ: Menü genişliği 800 piksel yapıldı ki yazılar dikey olmasın
+            WindowManager.LayoutParams lpMenu = new WindowManager.LayoutParams(800, WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, PixelFormat.TRANSLUCENT);
             lpMenu.gravity = Gravity.TOP | Gravity.START;
-            lpMenu.x = 100; lpMenu.y = 200;
+            lpMenu.x = 50; lpMenu.y = 200;
             menuView = new MenuView(this, wm, lpMenu);
             wm.addView(menuView, lpMenu);
         } catch (Exception ignored) {}
@@ -144,23 +145,6 @@ public class CaptureService extends Service {
                 if (Config.espEnabled) overlay.post(() -> overlay.render(inFov, capW, capH, screenW, screenH));
                 else overlay.post(() -> overlay.render(new ArrayList<>(), capW, capH, screenW, screenH));
             }
-
-            if (Config.aimEnabled) {
-                Detector.Blob target = Detector.nearestToCenter(inFov, screenW, screenH, capW, capH);
-                if (target != null) {
-                    long now = System.currentTimeMillis();
-                    if (now - lastFire >= Config.cooldownMs) {
-                        AimService svc = AimService.get();
-                        if (svc != null && svc.injector() != null) {
-                            float cx = screenW / 2f, cy = screenH / 2f;
-                            float tx = target.cx * (float) screenW / capW;
-                            float ty = target.cy * (float) screenH / capH;
-                            svc.injector().swipe(cx, cy, tx, ty);
-                            lastFire = now;
-                        }
-                    }
-                }
-            }
         } catch (Exception ignored) { } finally { if (img != null) img.close(); }
     }
 
@@ -168,7 +152,7 @@ public class CaptureService extends Service {
         String ch = "delta";
         if (Build.VERSION.SDK_INT >= 26) {
             NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-            if (nm != null) nm.createNotificationChannel(new NotificationChannel(ch, "Buse naz delta force", NotificationManager.IMPORTANCE_LOW));
+            if (nm != null) nm.createNotificationChannel(new NotificationChannel(ch, "Buse", NotificationManager.IMPORTANCE_LOW));
         }
         return new Notification.Builder(this, ch).setContentTitle("Buse naz delta force").setContentText("Aktif").setSmallIcon(android.R.drawable.ic_menu_view).build();
     }

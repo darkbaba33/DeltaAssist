@@ -23,17 +23,21 @@ public class OverlayView extends View {
     public OverlayView(Context ctx, int sw, int sh) {
         super(ctx);
         this.screenW = sw; this.screenH = sh;
+        
         boxPaint.setStyle(Paint.Style.STROKE);
-        boxPaint.setStrokeWidth(4f);
+        boxPaint.setStrokeWidth(8f); // KUTU ÇİZGİSİ KALINLAŞTIRILDI
+        
         linePaint.setStyle(Paint.Style.STROKE);
-        linePaint.setStrokeWidth(2f);
+        linePaint.setStrokeWidth(4f); // SNAPLINE KALINLAŞTIRILDI
         linePaint.setColor(Color.RED);
+        
         textPaint.setColor(Color.WHITE);
-        textPaint.setTextSize(30f);
+        textPaint.setTextSize(40f);
         textPaint.setTypeface(Typeface.DEFAULT_BOLD);
-        textPaint.setShadowLayer(4f, 2f, 2f, Color.BLACK);
+        textPaint.setShadowLayer(5f, 3f, 3f, Color.BLACK);
+
         skeletonPaint.setStyle(Paint.Style.STROKE);
-        skeletonPaint.setStrokeWidth(3f);
+        skeletonPaint.setStrokeWidth(5f);
     }
 
     public void render(List<Detector.Blob> bList, int cw, int ch, int sw, int sh) {
@@ -57,21 +61,26 @@ public class OverlayView extends View {
         for (Detector.Blob b : targets) {
             final float x = b.cx * sx;
             final float y = b.cy * sy;
-            float boxWidth = 120f;
-            float boxHeight = 200f;
+            
+            float boxWidth = 160f; // Kutu genişliği artırıldı
+            float boxHeight = 300f; // Kutu boyu artırıldı
+            
             Rect rect = new Rect((int)(x - boxWidth/2), (int)(y - boxHeight*0.7f), (int)(x + boxWidth/2), (int)(y + boxHeight*0.3f));
 
             if (Config.showBox) c.drawRect(rect, boxPaint);
             if (Config.showLine) c.drawLine(screenW / 2f, screenH, x, y, linePaint);
-            if (Config.showName) c.drawText("DUSMAN", x - 45f, rect.top - 15f, textPaint);
+            if (Config.showName) {
+                // Yazının arkasına siyah bir gölge/kutu ekleyerek okunabilirliği artırıyoruz
+                c.drawText("DÜŞMAN", x - 70f, rect.top - 20f, textPaint);
+            }
 
             if (Config.showSkeleton) {
-                float headY = rect.top + 30;
-                c.drawCircle(x, headY, 15f, skeletonPaint);
-                c.drawLine(x, headY + 15, x, headY + 80, skeletonPaint);
-                c.drawLine(x - 30, headY + 40, x + 30, headY + 40, skeletonPaint);
-                c.drawLine(x, headY + 80, x - 25, headY + 150, skeletonPaint);
-                c.drawLine(x, headY + 80, x + 25, headY + 150, skeletonPaint);
+                float headY = rect.top + 40;
+                c.drawCircle(x, headY, 20f, skeletonPaint);
+                c.drawLine(x, headY + 20, x, headY + 120, skeletonPaint);
+                c.drawLine(x - 40, headY + 60, x + 40, headY + 60, skeletonPaint);
+                c.drawLine(x, headY + 120, x - 35, headY + 200, skeletonPaint);
+                c.drawLine(x, headY + 120, x + 35, headY + 200, skeletonPaint);
             }
         }
     }
