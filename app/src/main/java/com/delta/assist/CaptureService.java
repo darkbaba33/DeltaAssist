@@ -19,7 +19,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.WindowManager;
 import java.nio.ByteBuffer;
@@ -43,26 +42,13 @@ public class CaptureService extends Service {
     private final Bitmap reuseBuffer = Bitmap.createBitmap(Config.CAPTURE_WIDTH, Config.CAPTURE_HEIGHT, Bitmap.Config.ARGB_8888);
 
     private final MediaProjection.Callback projectionCallback = new MediaProjection.Callback() {
-        @Override
-        public void onStop() {
-            super.onStop();
-            running = false;
-        }
+        @Override public void onStop() { super.onStop(); running = false; }
     };
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null) return START_NOT_STICKY;
-
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                startForeground(1, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
-            } else {
-                startForeground(1, buildNotification());
-            }
-        } catch (Exception e) {
-            Log.e("DeltaAssist", "startForeground failed", e);
-        }
+        startForeground(1, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
 
         Intent data = null;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -72,60 +58,36 @@ public class CaptureService extends Service {
         }
         final int rc = intent.getIntExtra(EXTRA_RESULT_CODE, 0);
 
-        if (data == null || rc == 0) {
-            stopSelf();
-            return START_NOT_STICKY;
-        }
+        if (data == null || rc == 0) { stopSelf(); return START_NOT_STICKY; }
 
         handlerThread = new HandlerThread("CaptureThread");
         handlerThread.start();
         backgroundHandler = new Handler(handlerThread.getLooper());
 
-        final MediaProjectionManager mgr = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-        try {
-            projection = mgr.getMediaProjection(rc, data);
-        } catch (Exception e) {
-            Log.e("DeltaAssist", "MediaProjection init failed", e);
-            stopSelf();
-            return START_NOT_STICKY;
-        }
+        MediaProjectionManager mgr = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+        projection = mgr.getMediaProjection(rc, data);
+        if (projection == null) { stopSelf(); return START_NOT_STICKY; }
 
-        if (projection == null) {
-            stopSelf();
-            return START_NOT_STICKY;
-        }
-
-        // Android 14 KRİTİK KURAL: Callback kaydı
         projection.registerCallback(projectionCallback, backgroundHandler);
 
         try {
-            final WindowManager w = (WindowManager) getSystemService(WINDOW_SERVICE);
-            if (w != null) {
-                screenW = w.getCurrentWindowMetrics().getBounds().width();
-                screenH = w.getCurrentWindowMetrics().getBounds().height();
-            }
+            WindowManager w = (WindowManager) getSystemService(WINDOW_SERVICE);
+            screenW = w.getCurrentWindowMetrics().getBounds().width();
+            screenH = w.getCurrentWindowMetrics().getBounds().height();
         } catch (Exception ignored) {}
 
         if (screenW == 0 || screenH == 0) {
             screenW = getResources().getDisplayMetrics().widthPixels;
             screenH = getResources().getDisplayMetrics().heightPixels;
         }
-
         dpi = getResources().getDisplayMetrics().densityDpi;
         capW = Config.CAPTURE_WIDTH;
         capH = (int) ((long) capW * screenH / Math.max(1, screenW));
 
-        try {
-            reader = ImageReader.newInstance(capW, capH, PixelFormat.RGBA_8888, 2);
-            display = projection.createVirtualDisplay("delta-cap", capW, capH, dpi, DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, reader.getSurface(), null, backgroundHandler);
-        } catch (Exception e) {
-            Log.e("DeltaAssist", "VirtualDisplay failed", e);
-            stopSelf();
-            return START_NOT_STICKY;
-        }
+        reader = ImageReader.newInstance(capW, capH, PixelFormat.RGBA_8888, 2);
+        display = projection.createVirtualDisplay("delta-cap", capW, capH, dpi, DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, reader.getSurface(), null, backgroundHandler);
 
         setupOverlay();
-
         running = true;
         reader.setOnImageAvailableListener(this::onFrame, backgroundHandler);
         return START_STICKY;
@@ -135,17 +97,15 @@ public class CaptureService extends Service {
         try {
             wm = (WindowManager) getSystemService(WINDOW_SERVICE);
             overlay = new OverlayView(this, screenW, screenH);
-            final WindowManager.LayoutParams lpEsp = new WindowManager.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN, PixelFormat.TRANSLUCENT);
+            WindowManager.LayoutParams lpEsp = new WindowManager.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN, PixelFormat.TRANSLUCENT);
             wm.addView(overlay, lpEsp);
 
-            final WindowManager.LayoutParams lpMenu = new WindowManager.LayoutParams(WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, PixelFormat.TRANSLUCENT);
+            WindowManager.LayoutParams lpMenu = new WindowManager.LayoutParams(WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, PixelFormat.TRANSLUCENT);
             lpMenu.gravity = Gravity.TOP | Gravity.START;
             lpMenu.x = 100; lpMenu.y = 200;
             menuView = new MenuView(this, wm, lpMenu);
             wm.addView(menuView, lpMenu);
-        } catch (Exception e) {
-            Log.e("DeltaAssist", "Overlay failed", e);
-        }
+        } catch (Exception ignored) {}
     }
 
     private void onFrame(ImageReader r) {
@@ -154,8 +114,8 @@ public class CaptureService extends Service {
         try {
             img = r.acquireLatestImage();
             if (img == null) return;
-            final Image.Plane plane = img.getPlanes()[0];
-            final ByteBuffer buf = plane.getBuffer();
+            Image.Plane plane = img.getPlanes()[0];
+            ByteBuffer buf = plane.getBuffer();
             if (plane.getPixelStride() == 4 && plane.getRowStride() == capW * 4) {
                 buf.rewind(); reuseBuffer.copyPixelsFromBuffer(buf);
             } else {
@@ -205,14 +165,12 @@ public class CaptureService extends Service {
     }
 
     private Notification buildNotification() {
-        final String ch = "delta";
+        String ch = "delta";
         if (Build.VERSION.SDK_INT >= 26) {
             NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-            if (nm != null) {
-                nm.createNotificationChannel(new NotificationChannel(ch, "DeltaAssist", NotificationManager.IMPORTANCE_LOW));
-            }
+            if (nm != null) nm.createNotificationChannel(new NotificationChannel(ch, "Buse naz delta force", NotificationManager.IMPORTANCE_LOW));
         }
-        return new Notification.Builder(this, ch).setContentTitle("DeltaAssist").setContentText("Aktif").setSmallIcon(android.R.drawable.ic_menu_view).build();
+        return new Notification.Builder(this, ch).setContentTitle("Buse naz delta force").setContentText("Aktif").setSmallIcon(android.R.drawable.ic_menu_view).build();
     }
 
     @Override

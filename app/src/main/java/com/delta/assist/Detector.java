@@ -22,7 +22,7 @@ public final class Detector {
             final int r = (c >> 16) & 0xFF;
             final int g = (c >> 8) & 0xFF;
             final int b = c & 0xFF;
-            if (r >= Config.redMinR && g >= Config.redMinG && g <= Config.redMaxG && b >= Config.redMinB && b <= Config.redMaxB) {
+            if (r >= Config.redMinR && g <= Config.redMaxG && b <= Config.redMaxB) {
                 mask[i] = true;
             }
         }
