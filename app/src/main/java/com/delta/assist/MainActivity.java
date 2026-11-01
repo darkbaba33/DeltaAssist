@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         findViewById(R.id.btn_overlay).setOnClickListener(v -> {
-            if (Settings.canDrawOverlays(this)) { status.setText("Overlay hazır"); return; }
+            if (Settings.canDrawOverlays(this)) { status.setText("Overlay hazir"); return; }
             startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName())));
         });
         findViewById(R.id.btn_access).setOnClickListener(v -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));

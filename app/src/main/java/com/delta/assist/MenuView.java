@@ -174,7 +174,7 @@ public class MenuView extends LinearLayout {
         tv.setText(text);
         tv.setTextColor(Color.WHITE);
         tv.setTextSize(16f);
-        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f);
+        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
         tv.setLayoutParams(p);
         row.addView(tv);
 
