@@ -6,6 +6,7 @@ import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ServiceInfo;
 import android.graphics.Bitmap;
 import android.graphics.PixelFormat;
 import android.hardware.display.DisplayManager;
@@ -16,8 +17,8 @@ import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.IBinder;
-import android.os.Looper;
 import android.view.Gravity;
 import android.view.WindowManager;
 import java.nio.ByteBuffer;
@@ -30,7 +31,8 @@ public class CaptureService extends Service {
     private MediaProjection projection;
     private VirtualDisplay display;
     private ImageReader reader;
-    private Handler thread;
+    private HandlerThread handlerThread;
+    private Handler backgroundHandler;
     private volatile boolean running;
     private OverlayView overlay;
     private MenuView menuView;
@@ -42,14 +44,26 @@ public class CaptureService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null) return START_NOT_STICKY;
-        startForeground(1, buildNotification());
+
         final int rc = intent.getIntExtra(EXTRA_RESULT_CODE, 0);
-        final Intent data = intent.getParcelableExtra(EXTRA_RESULT_DATA);
+        Intent data = null;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            data = intent.getParcelableExtra(EXTRA_RESULT_DATA, Intent.class);
+        } else {
+            data = intent.getParcelableExtra(EXTRA_RESULT_DATA);
+        }
+
         if (data == null) { stopSelf(); return START_NOT_STICKY; }
 
         final MediaProjectionManager mgr = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
         projection = mgr.getMediaProjection(rc, data);
         if (projection == null) { stopSelf(); return START_NOT_STICKY; }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(1, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
+        } else {
+            startForeground(1, buildNotification());
+        }
 
         final WindowManager w = (WindowManager) getSystemService(WINDOW_SERVICE);
         screenW = w.getCurrentWindowMetrics().getBounds().width();
@@ -60,10 +74,15 @@ public class CaptureService extends Service {
 
         reader = ImageReader.newInstance(capW, capH, PixelFormat.RGBA_8888, 2);
         display = projection.createVirtualDisplay("delta-cap", capW, capH, dpi, DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, reader.getSurface(), null, null);
+        
         setupOverlay();
-        thread = new Handler(Looper.getMainLooper());
+        
+        handlerThread = new HandlerThread("CaptureThread");
+        handlerThread.start();
+        backgroundHandler = new Handler(handlerThread.getLooper());
+        
         running = true;
-        reader.setOnImageAvailableListener(this::onFrame, thread);
+        reader.setOnImageAvailableListener(this::onFrame, backgroundHandler);
         return START_STICKY;
     }
 
@@ -112,8 +131,8 @@ public class CaptureService extends Service {
                 if (Math.sqrt(dx*dx + dy*dy) < capW * Config.fovFraction) inFov.add(b);
             }
 
-            if (Config.espEnabled) overlay.render(inFov, capW, capH, screenW, screenH);
-            else overlay.render(new ArrayList<>(), capW, capH, screenW, screenH);
+            if (Config.espEnabled) overlay.post(() -> overlay.render(inFov, capW, capH, screenW, screenH));
+            else overlay.post(() -> overlay.render(new ArrayList<>(), capW, capH, screenW, screenH));
 
             if (Config.aimEnabled) {
                 Detector.Blob target = Detector.nearestToCenter(inFov, screenW, screenH, capW, capH);
@@ -146,6 +165,7 @@ public class CaptureService extends Service {
     @Override
     public void onDestroy() {
         running = false;
+        if (handlerThread != null) handlerThread.quitSafely();
         if (display != null) display.release();
         if (reader != null) reader.close();
         if (projection != null) projection.stop();
